@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatStreamRouteImport } from './routes/api/chat-stream'
 
@@ -22,6 +23,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,12 +43,14 @@ const ApiChatStreamRoute = ApiChatStreamRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/api/chat-stream': typeof ApiChatStreamRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/api/chat-stream': typeof ApiChatStreamRoute
@@ -50,20 +58,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/api/chat-stream': typeof ApiChatStreamRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/register' | '/settings' | '/api/chat-stream'
+  fullPaths: '/' | '/chat' | '/register' | '/settings' | '/api/chat-stream'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/register' | '/settings' | '/api/chat-stream'
-  id: '__root__' | '/' | '/register' | '/settings' | '/api/chat-stream'
+  to: '/' | '/chat' | '/register' | '/settings' | '/api/chat-stream'
+  id:
+    | '__root__'
+    | '/'
+    | '/chat'
+    | '/register'
+    | '/settings'
+    | '/api/chat-stream'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChatRoute: typeof ChatRoute
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRoute
   ApiChatStreamRoute: typeof ApiChatStreamRoute
@@ -85,6 +101,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +127,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChatRoute: ChatRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
   ApiChatStreamRoute: ApiChatStreamRoute,
