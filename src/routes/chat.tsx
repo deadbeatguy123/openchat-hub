@@ -14,6 +14,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { AVAILABLE_MODELS, ModelId } from "@/lib/models";
+import { PersonalizeDialog, Personalization } from "@/components/PersonalizeDialog";
 import {
   Plus,
   Send,
@@ -61,6 +62,8 @@ function ChatPage() {
   const [model, setModel] = useState<ModelId>("openrouter/auto");
   const [profileName, setProfileName] = useState("");
   const [hasKey, setHasKey] = useState(false);
+  const [personalizeOpen, setPersonalizeOpen] = useState(false);
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -146,29 +149,48 @@ function ChatPage() {
       return;
     }
 
+    // First message in a new chat → ask to personalize first
+    if (!activeChatId) {
+      setPendingPrompt(prompt);
+      setPersonalizeOpen(true);
+      return;
+    }
+
+    await runSend(prompt, activeChatId);
+  };
+
+  const handlePersonalizeConfirm = async (p: Personalization) => {
+    if (!user || !pendingPrompt) return;
+    const prompt = pendingPrompt;
+    setPendingPrompt(null);
+
+    const title = prompt.length > 50 ? prompt.slice(0, 50) + "…" : prompt;
+    const { data: newChat, error } = await supabase
+      .from("chats")
+      .insert({
+        user_id: user.id,
+        title,
+        preset_id: p.preset_id,
+        custom_model_name: p.custom_model_name,
+        custom_personality: p.custom_personality,
+        custom_background: p.custom_background,
+        custom_tone: p.custom_tone,
+      })
+      .select("id, title, updated_at")
+      .single();
+    if (error || !newChat) {
+      toast.error(error?.message ?? "Could not create chat");
+      return;
+    }
+    setActiveChatId(newChat.id);
+    setChats((prev) => [newChat, ...prev]);
+    await runSend(prompt, newChat.id);
+  };
+
+  const runSend = async (prompt: string, chatId: string) => {
     setInput("");
     setStreaming(true);
     setStreamedText("");
-
-    let chatId = activeChatId;
-
-    // Create chat if new
-    if (!chatId) {
-      const title = prompt.length > 50 ? prompt.slice(0, 50) + "…" : prompt;
-      const { data: newChat, error } = await supabase
-        .from("chats")
-        .insert({ user_id: user.id, title })
-        .select("id, title, updated_at")
-        .single();
-      if (error || !newChat) {
-        toast.error(error?.message ?? "Could not create chat");
-        setStreaming(false);
-        return;
-      }
-      chatId = newChat.id;
-      setActiveChatId(chatId);
-      setChats((prev) => [newChat, ...prev]);
-    }
 
     // Persist user message
     const userMsg: Message = {
@@ -403,6 +425,18 @@ function ChatPage() {
           </div>
         </form>
       </main>
+
+      {user && (
+        <PersonalizeDialog
+          open={personalizeOpen}
+          onOpenChange={(o) => {
+            setPersonalizeOpen(o);
+            if (!o) setPendingPrompt(null);
+          }}
+          userId={user.id}
+          onConfirm={handlePersonalizeConfirm}
+        />
+      )}
     </div>
   );
 }

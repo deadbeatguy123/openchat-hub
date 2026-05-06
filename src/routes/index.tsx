@@ -64,15 +64,16 @@ function LandingPage() {
         </div>
         <div className="relative z-10 space-y-6 max-w-lg">
           <h1 className="text-5xl font-bold leading-tight tracking-tight">
-            Chat with any LLM using your own OpenRouter key.
+            Build a chatbot with the personality you want.
           </h1>
           <p className="text-lg opacity-90">
-            One interface. Every model. Your keys, your billing, your control.
+            Customize the name, personality, background, and tone of any LLM. Save your favorite personas and reuse them across chats.
           </p>
           <div className="grid gap-3 pt-4">
+            <Feature icon={<Sparkles className="h-4 w-4" />} text="Personalize how the AI responds" />
             <Feature icon={<KeyRound className="h-4 w-4" />} text="Bring your own OpenRouter API key" />
             <Feature icon={<Zap className="h-4 w-4" />} text="Streaming responses from Gemini, Claude & more" />
-            <Feature icon={<Lock className="h-4 w-4" />} text="Your conversations stay private to your account" />
+            <Feature icon={<Lock className="h-4 w-4" />} text="Save & reuse personality presets" />
           </div>
         </div>
         <div className="relative z-10 text-sm opacity-70">© {new Date().getFullYear()} Keychat</div>

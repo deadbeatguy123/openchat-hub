@@ -46,16 +46,30 @@ export const Route = createFileRoute("/api/chat-stream")({
           return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
         }
 
-        // Verify chat ownership and fetch API key
+        // Verify chat ownership and fetch personalization
         const { data: chat } = await supabase
           .from("chats")
-          .select("id, user_id")
+          .select("id, user_id, custom_model_name, custom_personality, custom_background, custom_tone")
           .eq("id", body.chatId)
           .maybeSingle();
 
         if (!chat || chat.user_id !== userData.user.id) {
           return new Response(JSON.stringify({ error: "Chat not found" }), { status: 404 });
         }
+
+        // Build a system prompt from personalization, if any
+        const parts: string[] = [];
+        if (chat.custom_model_name) parts.push(`Your name is "${chat.custom_model_name}".`);
+        if (chat.custom_personality) parts.push(`Personality: ${chat.custom_personality}.`);
+        if (chat.custom_background) parts.push(`Background: ${chat.custom_background}.`);
+        if (chat.custom_tone) parts.push(`Tone / response style: ${chat.custom_tone}.`);
+        const systemPrompt = parts.length
+          ? parts.join(" ") + " Stay in character throughout the conversation."
+          : null;
+
+        const messagesForApi = systemPrompt
+          ? [{ role: "system" as const, content: systemPrompt }, ...body.messages]
+          : body.messages;
 
         const { data: profile } = await supabase
           .from("profiles")
@@ -83,7 +97,7 @@ export const Route = createFileRoute("/api/chat-stream")({
           },
           body: JSON.stringify({
             model: body.model,
-            messages: body.messages,
+            messages: messagesForApi,
             stream: true,
           }),
         });

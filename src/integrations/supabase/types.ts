@@ -17,21 +17,36 @@ export type Database = {
       chats: {
         Row: {
           created_at: string
+          custom_background: string | null
+          custom_model_name: string | null
+          custom_personality: string | null
+          custom_tone: string | null
           id: string
+          preset_id: string | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          custom_background?: string | null
+          custom_model_name?: string | null
+          custom_personality?: string | null
+          custom_tone?: string | null
           id?: string
+          preset_id?: string | null
           title?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          custom_background?: string | null
+          custom_model_name?: string | null
+          custom_personality?: string | null
+          custom_tone?: string | null
           id?: string
+          preset_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -80,6 +95,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      personality_presets: {
+        Row: {
+          background: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          model_name: string | null
+          name: string
+          personality: string | null
+          tone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          background?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          model_name?: string | null
+          name: string
+          personality?: string | null
+          tone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          background?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          model_name?: string | null
+          name?: string
+          personality?: string | null
+          tone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
