@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { AVAILABLE_MODELS, ModelId } from "@/lib/models";
 import { PersonalizeDialog, Personalization } from "@/components/PersonalizeDialog";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 import {
   Plus,
   Send,
@@ -454,13 +455,17 @@ function MessageBubble({
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap shadow-soft ${
+        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-soft ${
           isUser
-            ? "bg-bubble-user text-bubble-user-foreground rounded-br-sm"
+            ? "bg-bubble-user text-bubble-user-foreground rounded-br-sm whitespace-pre-wrap"
             : "bg-bubble-assistant text-bubble-assistant-foreground rounded-bl-sm"
         }`}
       >
-        {content}
+        {isUser ? (
+          content
+        ) : content ? (
+          <MarkdownMessage content={content} />
+        ) : null}
         {streaming && (
           <span className="inline-block w-2 h-4 ml-0.5 align-middle bg-current opacity-60 animate-pulse" />
         )}
