@@ -5,6 +5,7 @@ interface RequestBody {
   chatId: string;
   model: string;
   messages: Array<{ role: "user" | "assistant" | "system"; content: string }>;
+  parentMessageId?: string | null;
 }
 
 export const Route = createFileRoute("/api/chat-stream")({
@@ -155,6 +156,7 @@ export const Route = createFileRoute("/api/chat-stream")({
                   role: "assistant",
                   content: fullText,
                   model_used: body.model,
+                  parent_id: body.parentMessageId ?? null,
                 });
                 await supabase
                   .from("chats")

@@ -68,7 +68,9 @@ export type Database = {
           created_at: string
           id: string
           model_used: string | null
+          parent_id: string | null
           role: string
+          version: number
         }
         Insert: {
           chat_id: string
@@ -76,7 +78,9 @@ export type Database = {
           created_at?: string
           id?: string
           model_used?: string | null
+          parent_id?: string | null
           role: string
+          version?: number
         }
         Update: {
           chat_id?: string
@@ -84,7 +88,9 @@ export type Database = {
           created_at?: string
           id?: string
           model_used?: string | null
+          parent_id?: string | null
           role?: string
+          version?: number
         }
         Relationships: [
           {
@@ -92,6 +98,13 @@ export type Database = {
             columns: ["chat_id"]
             isOneToOne: false
             referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
