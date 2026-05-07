@@ -40,18 +40,17 @@ function LandingPage() {
     navigate({ to: "/chat" });
   };
 
-  const handleGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/chat",
-    });
-    if (result.error) {
-      toast.error("Could not sign in with Google");
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/chat" });
-  };
-
+const handleGoogle = async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin + "/auth/callback",
+    },
+  });
+  if (error) {
+    toast.error("Could not sign in with Google");
+  }
+};
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Hero */}
