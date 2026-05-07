@@ -156,6 +156,7 @@ export const Route = createFileRoute("/api/chat-stream")({
                   role: "assistant",
                   content: fullText,
                   model_used: body.model,
+                  parent_id: body.parentMessageId ?? null,
                 });
                 await supabase
                   .from("chats")
