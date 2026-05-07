@@ -13,7 +13,7 @@ export const Route = createFileRoute("/register")({
   component: RegisterPage,
   head: () => ({
     meta: [
-      { title: "Sign up — Keychat" },
+      { title: "Sign up — CompChat" },
       { name: "description", content: "Create your Keychat account and start chatting with any LLM." },
     ],
   }),
@@ -61,7 +61,7 @@ function RegisterPage() {
       <Card className="w-full max-w-md shadow-soft">
         <CardHeader className="space-y-1">
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2">
-            <Sparkles className="h-4 w-4" /> Keychat
+            <Sparkles className="h-4 w-4" /> CompChat
           </Link>
           <CardTitle className="text-2xl">Create your account</CardTitle>
           <CardDescription>Start chatting with any LLM using your own OpenRouter key.</CardDescription>
