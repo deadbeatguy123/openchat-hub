@@ -41,15 +41,24 @@ function LandingPage() {
   };
 
 const handleGoogle = async () => {
+  const isLovablePreview = window.location.hostname.includes("lovable.app") || 
+                            window.location.hostname.includes("lovableproject.com");
+
+  if (isLovablePreview) {
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/chat",
+    });
+    if (result.error) toast.error("Could not sign in with Google");
+    return;
+  }
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
       redirectTo: window.location.origin + "/auth/callback",
     },
   });
-  if (error) {
-    toast.error("Could not sign in with Google");
-  }
+  if (error) toast.error("Could not sign in with Google");
 };
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
