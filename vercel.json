@@ -1,3 +1,23 @@
 {
-  "framework": "tanstack-start"
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "dist/server/server.js": {
+      "includeFiles": "dist/server/**"
+    }
+  },
+  "routes": [
+    {
+      "src": "/_build/(.*)",
+      "dest": "/dist/client/_build/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "dest": "/dist/client/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/dist/server/server.js"
+    }
+  ]
 }
