@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/chat-stream")({
 
         const { data: userData, error: userErr } = await supabase.auth.getUser();
         if (userErr || !userData.user) {
-          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+          return new Response(JSON.stringify({ error: "Unauthorized!!" }), { status: 401 });
         }
 
         let body: RequestBody;
