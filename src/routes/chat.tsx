@@ -183,13 +183,7 @@ function ChatPage() {
   }, [activePath, streamedText]);
 
   const refreshChats = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("chats")
-      .select("id, title, updated_at")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
-    if (data) setChats(data);
+    await loadChats();
   };
 
   const startNewChat = () => {
