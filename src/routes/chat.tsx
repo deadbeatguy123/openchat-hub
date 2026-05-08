@@ -90,21 +90,53 @@ function ChatPage() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [{ data: profile }, { data: chatList }] = await Promise.all([
-        supabase.from("profiles").select("full_name, openrouter_api_key").eq("id", user.id).maybeSingle(),
-        supabase
-          .from("chats")
-          .select("id, title, updated_at")
-          .eq("user_id", user.id)
-          .order("updated_at", { ascending: false }),
-      ]);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, openrouter_api_key")
+        .eq("id", user.id)
+        .maybeSingle();
       if (profile) {
         setProfileName(profile.full_name ?? "");
         setHasKey(!!profile.openrouter_api_key);
       }
-      if (chatList) setChats(chatList);
+      await loadChats();
     })();
   }, [user]);
+
+  const loadChats = async () => {
+    if (!user) return;
+    const { data: chatList } = await supabase
+      .from("chats")
+      .select("id, title, updated_at, custom_model_name")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false });
+    if (!chatList) return;
+    const ids = chatList.map((c) => c.id);
+    let lastByChat: Record<string, { content: string; created_at: string }> = {};
+    if (ids.length) {
+      const { data: msgs } = await supabase
+        .from("messages")
+        .select("chat_id, content, created_at")
+        .in("chat_id", ids)
+        .order("created_at", { ascending: false });
+      if (msgs) {
+        for (const m of msgs) {
+          if (!lastByChat[m.chat_id]) {
+            lastByChat[m.chat_id] = { content: m.content, created_at: m.created_at };
+          }
+        }
+      }
+    }
+    const enriched: Chat[] = chatList.map((c) => ({
+      ...c,
+      last_message: lastByChat[c.id]?.content ?? null,
+      last_message_at: lastByChat[c.id]?.created_at ?? c.updated_at,
+    }));
+    enriched.sort((a, b) =>
+      (b.last_message_at ?? b.updated_at).localeCompare(a.last_message_at ?? a.updated_at),
+    );
+    setChats(enriched);
+  };
 
   useEffect(() => {
     if (!activeChatId) {
