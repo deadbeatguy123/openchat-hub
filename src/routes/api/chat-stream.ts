@@ -58,11 +58,20 @@ export const Route = createFileRoute("/api/chat-stream")({
           return new Response(JSON.stringify({ error: "Chat not found" }), { status: 404 });
         }
 
-        // Build a system prompt from personalization, if any
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("openrouter_api_key, global_persona, global_background")
+          .eq("id", userData.user.id)
+          .maybeSingle();
+
+        // Build a system prompt from personalization, if any.
+        // Per-chat overrides take priority; otherwise fall back to global profile defaults.
         const parts: string[] = [];
         if (chat.custom_model_name) parts.push(`Your name is "${chat.custom_model_name}".`);
-        if (chat.custom_personality) parts.push(`Personality: ${chat.custom_personality}.`);
-        if (chat.custom_background) parts.push(`Background: ${chat.custom_background}.`);
+        const personality = chat.custom_personality || profile?.global_persona;
+        const background = chat.custom_background || profile?.global_background;
+        if (personality) parts.push(`Personality: ${personality}.`);
+        if (background) parts.push(`Background: ${background}.`);
         if (chat.custom_tone) parts.push(`Tone / response style: ${chat.custom_tone}.`);
         const systemPrompt = parts.length
           ? parts.join(" ") + " Stay in character throughout the conversation."
@@ -71,12 +80,6 @@ export const Route = createFileRoute("/api/chat-stream")({
         const messagesForApi = systemPrompt
           ? [{ role: "system" as const, content: systemPrompt }, ...body.messages]
           : body.messages;
-
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("openrouter_api_key")
-          .eq("id", userData.user.id)
-          .maybeSingle();
 
         const apiKey = profile?.openrouter_api_key;
         if (!apiKey) {
