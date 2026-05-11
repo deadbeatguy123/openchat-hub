@@ -153,6 +153,8 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           full_name: string | null
+          global_background: string | null
+          global_persona: string | null
           id: string
           openrouter_api_key: string | null
           updated_at: string
@@ -161,6 +163,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
+          global_background?: string | null
+          global_persona?: string | null
           id: string
           openrouter_api_key?: string | null
           updated_at?: string
@@ -169,6 +173,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
+          global_background?: string | null
+          global_persona?: string | null
           id?: string
           openrouter_api_key?: string | null
           updated_at?: string
