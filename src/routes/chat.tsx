@@ -404,108 +404,140 @@ function ChatPage() {
 
   const initials = (profileName || user?.email || "U").slice(0, 2).toUpperCase();
 
-  return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="hidden md:flex w-72 flex-col bg-sidebar border-r border-sidebar-border">
-        <div className="p-4 border-b border-sidebar-border">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-sidebar-foreground">
-            <Sparkles className="h-5 w-5 text-primary" />
-            CompChat
-          </Link>
-        </div>
-        <div className="p-3">
-          <Button onClick={startNewChat} className="w-full justify-start gap-2" variant="default">
-            <Plus className="h-4 w-4" /> New chat
-          </Button>
-        </div>
-        <ScrollArea className="flex-1 px-2">
-          <div className="space-y-0.5 pb-3">
-            {chats.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                <MessageSquare className="h-8 w-8 text-muted-foreground/40 mb-2" />
-                <p className="text-sm text-muted-foreground">No conversations yet</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Start a new chat to begin</p>
-              </div>
-            )}
-            {chats.map((c) => {
-              const displayName = c.custom_model_name || c.title;
-              const isActive = activeChatId === c.id;
-              return (
-                <div
-                  key={c.id}
-                  className={`group flex items-start gap-3 rounded-lg px-2.5 py-2.5 cursor-pointer transition-colors ${
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "hover:bg-sidebar-accent/60 text-sidebar-foreground"
-                  }`}
-                  onClick={() => setActiveChatId(c.id)}
-                >
-                  <Avatar className="h-10 w-10 shrink-0">
-                    <AvatarFallback className="bg-gradient-hero text-primary-foreground text-xs font-semibold">
-                      {getChatInitials(displayName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p className="font-semibold text-sm truncate">{displayName}</p>
-                      <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
-                        {formatChatTime(c.last_message_at ?? c.updated_at)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 mt-0.5">
-                      <p className="text-xs text-muted-foreground truncate">
-                        {c.last_message ? c.last_message.replace(/\s+/g, " ").trim() : "No messages yet"}
-                      </p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteChat(c.id);
-                        }}
-                        className="transition-opacity shrink-0"
-                        aria-label="Delete chat"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                      </button>
-                    </div>
+  const sidebarContent = (
+    <div className="flex h-full w-full flex-col bg-sidebar">
+      <div className="p-4 border-b border-sidebar-border">
+        <Link to="/" className="flex items-center gap-2 font-semibold text-sidebar-foreground min-w-0">
+          <Sparkles className="h-5 w-5 text-primary shrink-0" />
+          <span className="truncate">CompChat</span>
+        </Link>
+      </div>
+      <div className="p-3">
+        <Button
+          onClick={() => {
+            startNewChat();
+            setMobileSidebarOpen(false);
+          }}
+          className="w-full justify-start gap-2"
+          variant="default"
+        >
+          <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">New chat</span>
+        </Button>
+      </div>
+      <ScrollArea className="flex-1 px-2">
+        <div className="space-y-0.5 pb-3">
+          {chats.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <MessageSquare className="h-8 w-8 text-muted-foreground/40 mb-2" />
+              <p className="text-sm text-muted-foreground">No conversations yet</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Start a new chat to begin</p>
+            </div>
+          )}
+          {chats.map((c) => {
+            const displayName = c.custom_model_name || c.title;
+            const isActive = activeChatId === c.id;
+            return (
+              <div
+                key={c.id}
+                className={`group flex items-start gap-3 rounded-lg px-2.5 py-2.5 cursor-pointer transition-colors min-w-0 ${
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "hover:bg-sidebar-accent/60 text-sidebar-foreground"
+                }`}
+                onClick={() => {
+                  setActiveChatId(c.id);
+                  setMobileSidebarOpen(false);
+                }}
+              >
+                <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarFallback className="bg-gradient-hero text-primary-foreground text-xs font-semibold">
+                    {getChatInitials(displayName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2 min-w-0">
+                    <p className="font-semibold text-sm truncate min-w-0 flex-1">{displayName}</p>
+                    <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                      {formatChatTime(c.last_message_at ?? c.updated_at)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 mt-0.5 min-w-0">
+                    <p className="text-xs text-muted-foreground truncate min-w-0 flex-1">
+                      {c.last_message ? c.last_message.replace(/\s+/g, " ").trim() : "No messages yet"}
+                    </p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPendingDelete(c);
+                      }}
+                      className="shrink-0 p-1.5 -mr-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                      aria-label="Delete chat"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
-        <div className="border-t border-sidebar-border p-3 space-y-1">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-hero text-primary-foreground text-xs font-semibold">
-              {initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate text-sidebar-foreground">{profileName || "User"}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-            </div>
-          </div>
-          <Link to="/settings">
-            <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-              <SettingsIcon className="h-4 w-4" /> Settings
-            </Button>
-          </Link>
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={handleLogout}>
-            <LogOut className="h-4 w-4" /> Sign out
-          </Button>
+              </div>
+            );
+          })}
         </div>
+      </ScrollArea>
+      <div className="border-t border-sidebar-border p-3 space-y-1">
+        <div className="flex items-center gap-3 px-2 py-2 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-hero text-primary-foreground text-xs font-semibold">
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate text-sidebar-foreground">{profileName || "User"}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+          </div>
+        </div>
+        <Link to="/settings" onClick={() => setMobileSidebarOpen(false)}>
+          <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+            <SettingsIcon className="h-4 w-4 shrink-0" /> <span className="truncate">Settings</span>
+          </Button>
+        </Link>
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={handleLogout}>
+          <LogOut className="h-4 w-4 shrink-0" /> <span className="truncate">Sign out</span>
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen bg-background">
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-72 shrink-0 flex-col border-r border-sidebar-border shadow-sm">
+        {sidebarContent}
       </aside>
+
+      {/* Mobile sidebar (Sheet) */}
+      <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+        <SheetContent side="left" className="p-0 w-72 max-w-[85vw] bg-sidebar border-r border-sidebar-border">
+          {sidebarContent}
+        </SheetContent>
+      </Sheet>
 
       {/* Main */}
       <main className="flex-1 flex flex-col min-w-0">
         <header className="border-b px-4 py-3 flex items-center justify-between gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-9 w-9 shrink-0"
+            onClick={() => setMobileSidebarOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
           <div className="md:hidden">
             <Link to="/" className="font-semibold flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" /> CompChat
             </Link>
           </div>
-          <div className="flex-1 flex items-center justify-end md:justify-start">
+          <div className="flex-1 flex items-center justify-end md:justify-start min-w-0">
             <Select value={model} onValueChange={(v) => setModel(v as ModelId)}>
-              <SelectTrigger className="w-[260px]">
+              <SelectTrigger className="w-[200px] md:w-[260px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
