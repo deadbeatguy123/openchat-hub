@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Sparkles, KeyRound, Lock, Zap, MessageSquareDiff } from "lucide-react";
+import { Sparkles, KeyRound, Lock, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -98,7 +98,7 @@ const handleGoogle = async () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <Button variant="outline" className="w-full" onClick={handleGoogle} type="button">
-              <MessageSquareDiff className="mr-2 h-4 w-4" /> Continue with Google
+              <GoogleIcon /> Continue with Google
             </Button>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
