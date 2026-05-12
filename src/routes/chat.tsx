@@ -527,7 +527,7 @@ function ChatPage() {
                   <Sparkles className="h-8 w-8 text-primary-foreground" />
                 </div>
                 <h2 className="text-3xl font-bold tracking-tight">
-                  Welcome back, {profileName ? `, ${profileName.split(" ")[0]}` : ""}!.
+                  Welcome back {profileName ? `, ${profileName.split(" ")[0]}` : ""}!
                 </h2>
                 <p className="text-muted-foreground mt-2 max-w-md">
                   Need a friend? Pick a model above and start a conversation.
