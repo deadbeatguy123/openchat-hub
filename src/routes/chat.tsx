@@ -458,6 +458,9 @@ function ChatPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2 min-w-0">
                     <p className="font-semibold text-sm truncate min-w-0 flex-1">{displayName}</p>
+                    <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                      {formatChatTime(c.last_message_at ?? c.updated_at)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between gap-2 mt-0.5 min-w-0">
                     <p className="text-xs text-muted-foreground truncate min-w-0 flex-1">
