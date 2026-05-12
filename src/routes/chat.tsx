@@ -441,30 +441,23 @@ function ChatPage() {
                       {getChatInitials(displayName)}
                     </AvatarFallback>
                   </Avatar>
-                  
-                  {/* 1. Ensure the main container has min-w-0 and overflow-hidden */}
-                  <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
-                      {/* 2. Add min-w-0 to the name so it truncates instead of pushing the time */}
-                      <p className="font-semibold text-sm truncate min-w-0">{displayName}</p>
+                      <p className="font-semibold text-sm truncate">{displayName}</p>
                       <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
                         {formatChatTime(c.last_message_at ?? c.updated_at)}
                       </span>
                     </div>
-                    
                     <div className="flex items-center justify-between gap-2 mt-0.5">
-                      {/* 3. Add min-w-0 here so the preview text respects the sidebar width */}
-                      <p className="text-xs text-muted-foreground truncate min-w-0">
+                      <p className="text-xs text-muted-foreground truncate">
                         {c.last_message ? c.last_message.replace(/\s+/g, " ").trim() : "No messages yet"}
                       </p>
-                      
-                      {/* 4. Ensure the button stays visible on hover and doesn't get pushed out */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteChat(c.id);
                         }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto"
+                        className="transition-opacity shrink-0"
                         aria-label="Delete chat"
                       >
                         <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
