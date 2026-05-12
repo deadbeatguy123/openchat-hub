@@ -84,7 +84,7 @@ const handleGoogle = async () => {
             <Feature icon={<Lock className="h-4 w-4" />} text="Save & reuse personality presets" />
           </div>
         </div>
-        <div className="relative z-10 text-sm opacity-70">© {new Date().getFullYear()} Keychat</div>
+        <div className="relative z-10 text-sm opacity-70">© {new Date().getFullYear()} CompChat</div>
         <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
       </div>
