@@ -648,6 +648,20 @@ function ChatPage() {
           onConfirm={handlePersonalizeConfirm}
         />
       )}
+
+      <DeleteChatDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => {
+          if (!o) setPendingDelete(null);
+        }}
+        chatName={pendingDelete?.custom_model_name || pendingDelete?.title}
+        onConfirm={() => {
+          if (pendingDelete) {
+            deleteChat(pendingDelete.id);
+            setPendingDelete(null);
+          }
+        }}
+      />
     </div>
   );
 }
