@@ -18,6 +18,7 @@ import { AVAILABLE_MODELS, ModelId } from "@/lib/models";
 import { PersonalizeDialog, Personalization } from "@/components/PersonalizeDialog";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { DeleteChatDialog } from "@/components/DeleteChatDialog";
+import { ApiKeySetupDialog } from "@/components/ApiKeySetupDialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   Plus,
@@ -662,6 +663,15 @@ function ChatPage() {
           }
         }}
       />
+
+      {user && (
+        <ApiKeySetupDialog
+          open={!hasKey}
+          userId={user.id}
+          onSaved={() => setHasKey(true)}
+          onSignOut={signOut}
+        />
+      )}
     </div>
   );
 }
