@@ -663,6 +663,15 @@ function ChatPage() {
           }
         }}
       />
+
+      {user && (
+        <ApiKeySetupDialog
+          open={!hasKey}
+          userId={user.id}
+          onSaved={() => setHasKey(true)}
+          onSignOut={signOut}
+        />
+      )}
     </div>
   );
 }
