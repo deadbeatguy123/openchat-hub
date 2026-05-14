@@ -636,18 +636,19 @@ function ChatPage() {
 
   const initials = (profileName || user?.email || "U").slice(0, 2).toUpperCase();
 
-  const sidebarProps = {
-    chats,
-    activeChatId,
-    initials,
-    profileName,
-    email: user?.email,
-    onNewChat: startNewChat,
-    onSelectChat: handleSelectChat,
-    onRenameChat: renameChat,
-    onDeleteChat: deleteChat,
-    onLogout: handleLogout,
-  };
+const sidebarProps = {
+  chats,
+  activeChatId,
+  initials,
+  profileName,
+  email: user?.email,
+  onNewChat: startNewChat,
+  onSelectChat: handleSelectChat,
+  onRenameChat: renameChat,
+  onConfigureChat: handleConfigureChat,
+  onDeleteChat: deleteChat,
+  onLogout: handleLogout,
+};
 
   return (
     <div className="flex h-screen bg-background">
