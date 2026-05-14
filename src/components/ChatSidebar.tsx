@@ -20,28 +20,17 @@ import {
 
 export interface SidebarChat {
   id: string;
-
-  /*
-   * The current project uses `title`.
-   * The requested generic shape uses `name`.
-   * Supporting both makes this component safer.
-   */
   title?: string | null;
   name?: string | null;
-
-  /*
-   * Optional. Current repo does not appear to use chat avatars yet,
-   * but this supports the requested { id, name, avatar, lastMessage } shape.
-   */
   avatar?: string | null;
-
   updated_at?: string | null;
-  custom_model_name?: string | null;
 
-  /*
-   * The current project uses `last_message`.
-   * The requested generic shape uses `lastMessage`.
-   */
+  preset_id?: string | null;
+  custom_model_name?: string | null;
+  custom_personality?: string | null;
+  custom_background?: string | null;
+  custom_tone?: string | null;
+
   last_message?: string | null;
   lastMessage?: string | null;
   last_message_at?: string | null;
@@ -55,20 +44,8 @@ interface ChatSidebarProps {
   email?: string | null;
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
-
-  /*
-   * Placeholder configure handler.
-   * In the next feature patch, this should open the real ConfigureChatDialog.
-   */
   onConfigureChat?: (chat: SidebarChat) => void;
-
-  /*
-   * The actual delete logic stays in chat.tsx.
-   * That is safer because chat.tsx already knows Supabase, active chat state,
-   * messages, branch state, and toast rollback behavior.
-   */
   onDeleteChat: (id: string) => Promise<void>;
-
   onLogout: () => void;
 }
 
@@ -150,9 +127,7 @@ export function ChatSidebar({
             const isActive = activeChatId === chat.id;
             const isBusy = busyChatId === chat.id;
 
-            const displayTitle =
-              (chat.name ?? chat.title ?? "").trim() || "Untitled chat";
-
+            const displayTitle = getDisplayTitle(chat);
             const previewText = getPreviewText(chat);
             const showPeek = peekChatId === chat.id;
 
@@ -171,7 +146,6 @@ export function ChatSidebar({
                   );
                 }}
               >
-                {/* Left/Middle Zone: avatar + chat name. Only this zone triggers the peek preview. */}
                 <div
                   className="flex min-w-0 flex-1 items-center gap-3 pr-2"
                   onMouseEnter={() => setPeekChatId(chat.id)}
@@ -201,7 +175,6 @@ export function ChatSidebar({
                   </div>
                 </div>
 
-                {/* Right Zone: action icons. Parent group-hover keeps these visible anywhere inside the card. */}
                 <div
                   className="pointer-events-none ml-auto flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
                   onClick={(event) => event.stopPropagation()}
@@ -212,7 +185,7 @@ export function ChatSidebar({
                     onClick={() => handleConfigure(chat)}
                     className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                     aria-label={`Configure ${displayTitle}`}
-                    title="Configure chat"
+                    title="Configure personality"
                     disabled={isBusy}
                   >
                     <SettingsIcon className="h-4 w-4" />
@@ -230,7 +203,6 @@ export function ChatSidebar({
                   </button>
                 </div>
 
-                {/* Floating preview. This does not affect layout height. */}
                 {showPeek && (
                   <div className="pointer-events-none absolute left-3 right-3 top-full z-30 mt-2 rounded-xl border border-sidebar-border bg-popover px-3 py-2.5 text-popover-foreground shadow-xl">
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -284,6 +256,22 @@ export function ChatSidebar({
       </div>
     </aside>
   );
+}
+
+function getDisplayTitle(chat: SidebarChat): string {
+  const rawTitle = (chat.name ?? chat.title ?? "").trim().replace(/\s+/g, " ");
+
+  if (rawTitle && /[\p{L}\p{N}]/u.test(rawTitle)) {
+    return rawTitle;
+  }
+
+  const botName = chat.custom_model_name?.trim();
+
+  if (botName) {
+    return `${botName} chat`;
+  }
+
+  return "Untitled chat";
 }
 
 function getChatInitials(name: string): string {
