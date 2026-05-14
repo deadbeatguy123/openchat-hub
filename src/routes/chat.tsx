@@ -27,6 +27,10 @@ import {
 } from "@/components/PersonalizeDialog";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { ApiKeySetupDialog } from "@/components/ApiKeySetupDialog";
+import {
+  ConfigureChatDialog,
+  type ChatConfiguration,
+} from "@/components/ConfigureChatDialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   Check,
@@ -43,7 +47,13 @@ interface Chat {
   id: string;
   title: string;
   updated_at: string;
+
+  preset_id?: string | null;
   custom_model_name?: string | null;
+  custom_personality?: string | null;
+  custom_background?: string | null;
+  custom_tone?: string | null;
+
   last_message?: string | null;
   last_message_at?: string | null;
 }
@@ -88,6 +98,8 @@ function ChatPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [configureOpen, setConfigureOpen] = useState(false);
+  const [configuringChat, setConfiguringChat] = useState<Chat | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -123,7 +135,7 @@ function ChatPage() {
 
     const { data: chatList, error } = await supabase
       .from("chats")
-      .select("id, title, updated_at, custom_model_name")
+      .select("id, title, updated_at, preset_id, custom_model_name, custom_personality, custom_background, custom_tone")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
@@ -615,15 +627,66 @@ function ChatPage() {
     setMobileSidebarOpen(false);
   };
   
-  const handleConfigureChat = (chat: {
-  id: string;
-  title?: string | null;
-  name?: string | null;
-}) => {
-  const chatName = chat.name ?? chat.title ?? "chat";
+const handleConfigureChat = (chat: { id: string }) => {
+  const selectedChat = chats.find((item) => item.id === chat.id);
 
-  console.info("Configure chat:", chat.id);
-  toast.info(`Configure "${chatName}" coming next`);
+  if (!selectedChat) {
+    toast.error("Could not load chat settings");
+    return;
+  }
+
+  setConfiguringChat(selectedChat);
+  setConfigureOpen(true);
+  setMobileSidebarOpen(false);
+};
+
+const handleSaveChatConfiguration = async (
+  configuration: ChatConfiguration,
+): Promise<boolean> => {
+  if (!user || !configuringChat) {
+    toast.error("Could not load chat settings");
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from("chats")
+    .update({
+      preset_id: configuration.preset_id,
+      custom_model_name: configuration.custom_model_name,
+      custom_personality: configuration.custom_personality,
+      custom_background: configuration.custom_background,
+      custom_tone: configuration.custom_tone,
+    })
+    .eq("id", configuringChat.id)
+    .eq("user_id", user.id)
+    .select(
+      "id, title, updated_at, preset_id, custom_model_name, custom_personality, custom_background, custom_tone",
+    )
+    .single();
+
+  if (error || !data) {
+    toast.error(error?.message ?? "Could not update chat personality");
+    return false;
+  }
+
+  setChats((previous) =>
+    previous.map((chat) =>
+      chat.id === configuringChat.id
+        ? {
+            ...chat,
+            ...data,
+          }
+        : chat,
+    ),
+  );
+
+  toast.success("Chat personality updated");
+  return true;
+};
+  
+  const handleSelectChat = (id: string) => {
+  setActiveChatId(id);
+  setMobileSidebarOpen(false);
 };
 
   if (loading || !session) {
@@ -799,7 +862,20 @@ const sidebarProps = {
           </div>
         </form>
       </main>
+{user && (
+  <ConfigureChatDialog
+    open={configureOpen}
+    onOpenChange={(open) => {
+      setConfigureOpen(open);
 
+      if (!open) {
+        setConfiguringChat(null);
+      }
+    }}
+    chat={configuringChat}
+    onSave={handleSaveChatConfiguration}
+  />
+)}
       {user && (
         <PersonalizeDialog
           open={personalizeOpen}
