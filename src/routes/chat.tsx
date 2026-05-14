@@ -614,6 +614,17 @@ function ChatPage() {
     setActiveChatId(id);
     setMobileSidebarOpen(false);
   };
+  
+  const handleConfigureChat = (chat: {
+  id: string;
+  title?: string | null;
+  name?: string | null;
+}) => {
+  const chatName = chat.name ?? chat.title ?? "chat";
+
+  console.info("Configure chat:", chat.id);
+  toast.info(`Configure "${chatName}" coming next`);
+};
 
   if (loading || !session) {
     return (
