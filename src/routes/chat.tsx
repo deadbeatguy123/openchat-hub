@@ -659,9 +659,9 @@ const handleSaveChatConfiguration = async (
     })
     .eq("id", configuringChat.id)
     .eq("user_id", user.id)
-  .select(
-  "id, title, updated_at, preset_id, custom_model_name, custom_personality, custom_background, custom_tone",
-)
+    .select(
+      "id, title, updated_at, preset_id, custom_model_name, custom_personality, custom_background, custom_tone",
+    )
     .single();
 
   if (error || !data) {
@@ -671,19 +671,13 @@ const handleSaveChatConfiguration = async (
 
   setChats((previous) =>
     previous.map((chat) =>
-      chat.id === configuringChat.id
-        ? {
-            ...chat,
-            ...data,
-          }
-        : chat,
+      chat.id === configuringChat.id ? { ...chat, ...data } : chat,
     ),
   );
 
   toast.success("Chat personality updated");
   return true;
 };
-  
 
   if (loading || !session) {
     return (
