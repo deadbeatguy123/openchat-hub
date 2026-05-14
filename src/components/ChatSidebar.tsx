@@ -1,26 +1,49 @@
 import { Link } from "@tanstack/react-router";
-import { KeyboardEvent, useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
+
 import {
-  Check,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+import {
   LogOut,
   MessageSquare,
   Plus,
   Settings as SettingsIcon,
   Sparkles,
   Trash2,
-  X,
 } from "lucide-react";
 
 export interface SidebarChat {
   id: string;
-  title: string;
-  updated_at: string;
+
+  /*
+   * The current project uses `title`.
+   * The requested generic shape uses `name`.
+   * Supporting both makes this component safer.
+   */
+  title?: string | null;
+  name?: string | null;
+
+  /*
+   * Optional. Current repo does not appear to use chat avatars yet,
+   * but this supports the requested { id, name, avatar, lastMessage } shape.
+   */
+  avatar?: string | null;
+
+  updated_at?: string | null;
   custom_model_name?: string | null;
+
+  /*
+   * The current project uses `last_message`.
+   * The requested generic shape uses `lastMessage`.
+   */
   last_message?: string | null;
+  lastMessage?: string | null;
   last_message_at?: string | null;
 }
 
@@ -32,8 +55,20 @@ interface ChatSidebarProps {
   email?: string | null;
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
-  onRenameChat: (id: string, title: string) => Promise<boolean>;
+
+  /*
+   * Placeholder configure handler.
+   * In the next feature patch, this should open the real ConfigureChatDialog.
+   */
+  onConfigureChat?: (chat: SidebarChat) => void;
+
+  /*
+   * The actual delete logic stays in chat.tsx.
+   * That is safer because chat.tsx already knows Supabase, active chat state,
+   * messages, branch state, and toast rollback behavior.
+   */
   onDeleteChat: (id: string) => Promise<void>;
+
   onLogout: () => void;
 }
 
@@ -45,88 +80,66 @@ export function ChatSidebar({
   email,
   onNewChat,
   onSelectChat,
-  onRenameChat,
+  onConfigureChat,
   onDeleteChat,
   onLogout,
 }: ChatSidebarProps) {
-  const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState("");
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [peekChatId, setPeekChatId] = useState<string | null>(null);
   const [busyChatId, setBusyChatId] = useState<string | null>(null);
 
-  const startRename = (chat: SidebarChat) => {
-    setConfirmingDeleteId(null);
-    setRenamingChatId(chat.id);
-    setRenameValue(chat.title);
+  const handleConfigure = (chat: SidebarChat) => {
+    setPeekChatId(null);
+
+    if (onConfigureChat) {
+      onConfigureChat(chat);
+      return;
+    }
+
+    console.info("Configure chat:", chat.id);
   };
 
-  const cancelRename = () => {
-    setRenamingChatId(null);
-    setRenameValue("");
-  };
-
-  const saveRename = async (chatId: string) => {
+  const handleDelete = async (chatId: string) => {
+    setPeekChatId(null);
     setBusyChatId(chatId);
 
-    const success = await onRenameChat(chatId, renameValue);
-
-    setBusyChatId(null);
-
-    if (success) {
-      setRenamingChatId(null);
-      setRenameValue("");
+    try {
+      await onDeleteChat(chatId);
+    } finally {
+      setBusyChatId(null);
     }
-  };
-
-  const handleRenameKeyDown = (
-    e: KeyboardEvent<HTMLInputElement>,
-    chatId: string,
-  ) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      saveRename(chatId);
-    }
-
-    if (e.key === "Escape") {
-      e.preventDefault();
-      cancelRename();
-    }
-  };
-
-  const requestDelete = (chatId: string) => {
-    setRenamingChatId(null);
-    setConfirmingDeleteId(chatId);
-  };
-
-  const confirmDelete = async (chatId: string) => {
-    setBusyChatId(chatId);
-    await onDeleteChat(chatId);
-    setBusyChatId(null);
-    setConfirmingDeleteId(null);
   };
 
   return (
     <aside className="hidden md:flex w-72 flex-col bg-sidebar border-r border-sidebar-border">
       <div className="p-4 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-sidebar-foreground">
+        <Link
+          to="/"
+          className="flex items-center gap-2 font-semibold text-sidebar-foreground"
+        >
           <Sparkles className="h-5 w-5 text-primary" />
           CompChat
         </Link>
       </div>
 
       <div className="p-3">
-        <Button onClick={onNewChat} className="w-full justify-start gap-2" variant="default">
+        <Button
+          onClick={onNewChat}
+          className="w-full justify-start gap-2"
+          variant="default"
+        >
           <Plus className="h-4 w-4" />
           New chat
         </Button>
       </div>
 
       <ScrollArea className="flex-1 px-2">
-        <div className="space-y-0.5 pb-3">
+        <div className="space-y-1.5 pb-3">
           {chats.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
               <MessageSquare className="h-8 w-8 text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">No conversations yet</p>
+              <p className="text-sm text-muted-foreground">
+                No conversations yet
+              </p>
               <p className="text-xs text-muted-foreground/70 mt-1">
                 Start a new chat to begin
               </p>
@@ -135,149 +148,99 @@ export function ChatSidebar({
 
           {chats.map((chat) => {
             const isActive = activeChatId === chat.id;
-            const isRenaming = renamingChatId === chat.id;
-            const isConfirmingDelete = confirmingDeleteId === chat.id;
             const isBusy = busyChatId === chat.id;
 
-            const displayTitle = chat.title || "Untitled chat";
-            const previewText = chat.last_message
-              ? chat.last_message.replace(/\s+/g, " ").trim()
-              : chat.custom_model_name
-                ? `Bot: ${chat.custom_model_name}`
-                : "No messages yet";
+            const displayTitle =
+              (chat.name ?? chat.title ?? "").trim() || "Untitled chat";
+
+            const previewText = getPreviewText(chat);
+            const showPeek = peekChatId === chat.id;
 
             return (
               <div
                 key={chat.id}
-                className={`group flex items-start gap-3 rounded-lg px-2.5 py-2.5 cursor-pointer transition-colors ${
+                className={`group relative flex min-h-[58px] cursor-pointer items-center justify-between gap-3 rounded-xl border px-3 py-2.5 transition-all duration-150 ${
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "hover:bg-sidebar-accent/60 text-sidebar-foreground"
+                    ? "border-primary/30 bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                    : "border-sidebar-border/70 bg-sidebar/80 text-sidebar-foreground hover:border-sidebar-border hover:bg-sidebar-accent/60 hover:shadow-sm"
                 }`}
-                onClick={() => {
-                  if (!isRenaming && !isConfirmingDelete) {
-                    onSelectChat(chat.id);
-                  }
+                onClick={() => onSelectChat(chat.id)}
+                onMouseLeave={() => {
+                  setPeekChatId((current) =>
+                    current === chat.id ? null : current,
+                  );
                 }}
               >
-                <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarFallback className="bg-gradient-hero text-primary-foreground text-xs font-semibold">
-                    {getChatInitials(displayTitle)}
-                  </AvatarFallback>
-                </Avatar>
+                {/* Left/Middle Zone: avatar + chat name. Only this zone triggers the peek preview. */}
+                <div
+                  className="flex min-w-0 flex-1 items-center gap-3 pr-2"
+                  onMouseEnter={() => setPeekChatId(chat.id)}
+                  onMouseLeave={() => {
+                    setPeekChatId((current) =>
+                      current === chat.id ? null : current,
+                    );
+                  }}
+                >
+                  <Avatar className="h-10 w-10 shrink-0 border border-sidebar-border/70 shadow-sm">
+                    {chat.avatar ? (
+                      <AvatarImage src={chat.avatar} alt={displayTitle} />
+                    ) : null}
 
-                <div className="flex-1 min-w-0">
-                  {isRenaming ? (
-                    <div
-                      className="space-y-2"
-                      onClick={(e) => e.stopPropagation()}
+                    <AvatarFallback className="bg-gradient-hero text-primary-foreground text-xs font-semibold">
+                      {getChatInitials(displayTitle)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate text-sm font-semibold leading-5"
+                      title={displayTitle}
                     >
-                      <Input
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onKeyDown={(e) => handleRenameKeyDown(e, chat.id)}
-                        className="h-8 bg-background text-foreground"
-                        maxLength={80}
-                        autoFocus
-                        disabled={isBusy}
-                      />
-
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => saveRename(chat.id)}
-                          disabled={isBusy}
-                        >
-                          <Check className="h-3.5 w-3.5 mr-1" />
-                          Save
-                        </Button>
-
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 px-2 text-xs"
-                          onClick={cancelRename}
-                          disabled={isBusy}
-                        >
-                          <X className="h-3.5 w-3.5 mr-1" />
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="font-semibold text-sm truncate" title={displayTitle}>
-                          {displayTitle}
-                        </p>
-
-                        <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
-                          {formatChatTime(chat.last_message_at ?? chat.updated_at)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2 mt-0.5">
-                        <p className="text-xs text-muted-foreground truncate">
-                          {previewText}
-                        </p>
-
-                        {isConfirmingDelete ? (
-                          <div
-                            className="flex items-center gap-1 shrink-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => confirmDelete(chat.id)}
-                              disabled={isBusy}
-                              className="rounded-md px-2 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                            >
-                              Confirm
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setConfirmingDeleteId(null)}
-                              disabled={isBusy}
-                              className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent disabled:opacity-50"
-                              aria-label="Cancel delete"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div
-                            className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => startRename(chat)}
-                              className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
-                              aria-label="Rename chat"
-                              title="Rename chat"
-                            >
-                              <SettingsIcon className="h-3.5 w-3.5" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => requestDelete(chat.id)}
-                              className="rounded-md p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              aria-label="Delete chat"
-                              title="Delete chat"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
+                      {displayTitle}
+                    </p>
+                  </div>
                 </div>
+
+                {/* Right Zone: action icons. Parent group-hover keeps these visible anywhere inside the card. */}
+                <div
+                  className="pointer-events-none ml-auto flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
+                  onClick={(event) => event.stopPropagation()}
+                  onMouseEnter={() => setPeekChatId(null)}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleConfigure(chat)}
+                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                    aria-label={`Configure ${displayTitle}`}
+                    title="Configure chat"
+                    disabled={isBusy}
+                  >
+                    <SettingsIcon className="h-4 w-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(chat.id)}
+                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                    aria-label={`Delete ${displayTitle}`}
+                    title="Delete chat"
+                    disabled={isBusy}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Floating preview. This does not affect layout height. */}
+                {showPeek && (
+                  <div className="pointer-events-none absolute left-3 right-3 top-full z-30 mt-2 rounded-xl border border-sidebar-border bg-popover px-3 py-2.5 text-popover-foreground shadow-xl">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Latest message
+                    </p>
+                    <p className="overflow-hidden text-xs leading-relaxed text-popover-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                      {previewText}
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -299,7 +262,11 @@ export function ChatSidebar({
         </div>
 
         <Link to="/settings">
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2"
+          >
             <SettingsIcon className="h-4 w-4" />
             Settings
           </Button>
@@ -333,45 +300,12 @@ function getChatInitials(name: string): string {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
-function formatChatTime(iso: string): string {
-  if (!iso) return "";
+function getPreviewText(chat: SidebarChat): string {
+  const rawPreview =
+    chat.lastMessage ??
+    chat.last_message ??
+    (chat.custom_model_name ? `Bot: ${chat.custom_model_name}` : null) ??
+    "No messages yet";
 
-  const date = new Date(iso);
-
-  if (Number.isNaN(date.getTime())) return "";
-
-  const now = new Date();
-
-  const sameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-
-  if (sameDay) {
-    return date.toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  }
-
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
-
-  if (diffDays < 7) {
-    return date.toLocaleDateString([], {
-      weekday: "short",
-    });
-  }
-
-  if (date.getFullYear() === now.getFullYear()) {
-    return date.toLocaleDateString([], {
-      month: "short",
-      day: "numeric",
-    });
-  }
-
-  return date.toLocaleDateString([], {
-    year: "2-digit",
-    month: "short",
-    day: "numeric",
-  });
+  return rawPreview.replace(/\s+/g, " ").trim() || "No messages yet";
 }
