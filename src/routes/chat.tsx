@@ -799,10 +799,7 @@ function ChatPage() {
     onSelectChat: handleSelectChat,
     onRenameChat: renameChat,
     onConfigureChat: handleConfigureChat,
-    onDeleteChat: (id: string) => {
-      const chat = chats.find((c) => c.id === id);
-      if (chat) setPendingDelete(chat);
-    },
+    onDeleteChat: deleteChat,
     onLogout: handleLogout,
   };
 
