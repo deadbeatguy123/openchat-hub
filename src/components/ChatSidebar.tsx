@@ -20,9 +20,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LogOut,
   MessageSquare,
+  MessageSquareText,
   Plus,
   Settings as SettingsIcon,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 
@@ -111,7 +111,7 @@ export function ChatSidebar({
           to="/"
           className="flex items-center gap-2 font-semibold text-sidebar-foreground"
         >
-          <Sparkles className="h-5 w-5 text-primary" />
+          <MessageSquareText className="h-5 w-5 text-primary" />
           CompChat
         </Link>
       </div>
