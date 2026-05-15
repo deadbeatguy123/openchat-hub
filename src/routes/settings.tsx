@@ -7,6 +7,9 @@ import { deleteOwnAccount } from "@/lib/account.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTheme } from "@/theme/ThemeProvider";
+import { Switch } from "@/components/ui/switch";
+import { Moon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Dialog,
@@ -43,6 +46,7 @@ function SettingsPage() {
   const { session, user, loading } = useAuth();
   const navigate = useNavigate();
   const deleteAccountFn = useServerFn(deleteOwnAccount);
+  const { isDark, toggleTheme } = useTheme();
 
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
@@ -221,6 +225,19 @@ function SettingsPage() {
                 {savingProfile ? "Saving…" : "Save changes"}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Moon className="h-5 w-5 text-primary" /> Appearance
+            </CardTitle>
+            <CardDescription>Choose your preferred color theme.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between">
+            <Label htmlFor="dark-mode">Dark mode</Label>
+            <Switch id="dark-mode" checked={isDark} onCheckedChange={toggleTheme} />
           </CardContent>
         </Card>
 
