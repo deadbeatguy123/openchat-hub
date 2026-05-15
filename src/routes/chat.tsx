@@ -43,7 +43,7 @@ import {
   Pencil,
   RotateCcw,
   Send,
-  message-square-text,
+  MessageSquareText,
   Trash2,
   X,
 } from "lucide-react";
@@ -830,7 +830,7 @@ function ChatPage() {
 
           <div className="md:hidden">
             <Link to="/" className="font-semibold flex items-center gap-2">
-              <message-square-text className="h-4 w-4 text-primary" />
+              <MessageSquareText className="h-4 w-4 text-primary" />
               CompChat
             </Link>
           </div>
@@ -868,7 +868,7 @@ function ChatPage() {
             {activePath.length === 0 && !streaming && (
               <div className="flex flex-col items-center justify-center text-center py-20">
                 <div className="h-16 w-16 rounded-2xl bg-gradient-hero flex items-center justify-center shadow-glow mb-6">
-                  <message-square-text className="h-8 w-8 text-primary-foreground" />
+                  <MessageSquareText className="h-8 w-8 text-primary-foreground" />
                 </div>
 
                 <h2 className="text-3xl font-bold tracking-tight">
