@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Sparkles, KeyRound, Lock, Zap } from "lucide-react";
+import { MessageSquareText, KeyRound, Lock, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -66,7 +66,7 @@ const handleGoogle = async () => {
       <div className="relative hidden lg:flex flex-col justify-between p-12 bg-gradient-hero text-primary-foreground overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-lg font-semibold">
-            <Sparkles className="h-5 w-5" />
+            <MessageSquareText className="h-5 w-5" />
             <span>CompChat</span>
           </div>
         </div>
@@ -78,7 +78,7 @@ const handleGoogle = async () => {
             Customize the name, personality, background, and tone of any LLM. Save your favorite personas and reuse them across chats.
           </p>
           <div className="grid gap-3 pt-4">
-            <Feature icon={<Sparkles className="h-4 w-4" />} text="Personalize how the AI responds" />
+            <Feature icon={<MessageSquareText className="h-4 w-4" />} text="Personalize how the AI responds" />
             <Feature icon={<KeyRound className="h-4 w-4" />} text="Bring your own OpenRouter API key" />
             <Feature icon={<Zap className="h-4 w-4" />} text="Pick various free LLM models with 50 messages a day" />
             <Feature icon={<Lock className="h-4 w-4" />} text="Save & reuse personality presets" />
