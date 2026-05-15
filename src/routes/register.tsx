@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Sparkles, Eye, EyeOff } from "lucide-react";
+import { MessageSquareText, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
@@ -61,7 +61,7 @@ function RegisterPage() {
       <Card className="w-full max-w-md shadow-soft">
         <CardHeader className="space-y-1">
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2">
-            <Sparkles className="h-4 w-4" /> CompChat
+            <MessageSquareText className="h-4 w-4" /> CompChat
           </Link>
           <CardTitle className="text-2xl">Create your account</CardTitle>
           <CardDescription>Start chatting with any LLM using your own OpenRouter key.</CardDescription>
