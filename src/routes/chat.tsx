@@ -27,6 +27,7 @@ import {
 } from "@/components/PersonalizeDialog";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { ApiKeySetupDialog } from "@/components/ApiKeySetupDialog";
+import { DeleteChatDialog } from "@/components/DeleteChatDialog";
 
 import {
   ConfigureChatDialog,
@@ -40,8 +41,10 @@ import {
   ChevronRight,
   Menu,
   Pencil,
+  RotateCcw,
   Send,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -99,6 +102,8 @@ function ChatPage() {
   const [branchSelection, setBranchSelection] = useState<Record<string, number>>(
     {},
   );
+  // Message-level delete (from file 2)
+  const [pendingDeleteMsg, setPendingDeleteMsg] = useState<Message | null>(null);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamedText, setStreamedText] = useState("");
@@ -109,6 +114,8 @@ function ChatPage() {
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
+  // Chat-level delete dialog (from file 2)
+  const [pendingDelete, setPendingDelete] = useState<Chat | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [configureOpen, setConfigureOpen] = useState(false);
   const [configuringChat, setConfiguringChat] = useState<Chat | null>(null);
@@ -389,11 +396,11 @@ function ChatPage() {
     const prompt = pendingPrompt;
     setPendingPrompt(null);
 
-  const titleSource =
-  personalization.custom_model_name?.trim() || prompt;
+    const titleSource =
+      personalization.custom_model_name?.trim() || prompt;
 
-  const title =
-  titleSource.length > 50 ? `${titleSource.slice(0, 50)}…` : titleSource;
+    const title =
+      titleSource.length > 50 ? `${titleSource.slice(0, 50)}…` : titleSource;
 
     const { data: newChat, error } = await supabase
       .from("chats")
@@ -630,6 +637,74 @@ function ChatPage() {
     });
   };
 
+  // Collect a message and all its descendants for cascade delete (from file 2)
+  const collectDescendantIds = (rootId: string): string[] => {
+    const ids: string[] = [];
+    const stack = [rootId];
+    while (stack.length) {
+      const current = stack.pop()!;
+      ids.push(current);
+      for (const message of allMessages) {
+        if (message.parent_id === current) stack.push(message.id);
+      }
+    }
+    return ids;
+  };
+
+  // Confirm and execute message-level delete with cascade (from file 2)
+  const confirmDeleteMessage = async () => {
+    if (!pendingDeleteMsg) return;
+    const ids = collectDescendantIds(pendingDeleteMsg.id);
+    const wasRoot = pendingDeleteMsg.parent_id === null;
+    setPendingDeleteMsg(null);
+    const { error } = await supabase.from("messages").delete().in("id", ids);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const remaining = allMessages.filter((m) => !ids.includes(m.id));
+    setAllMessages(remaining);
+    toast.success(
+      ids.length > 1 ? `Deleted ${ids.length} messages` : "Message deleted",
+    );
+    if (wasRoot || remaining.length === 0) {
+      startNewChat();
+    }
+    refreshChats();
+  };
+
+  // Retry an assistant message by re-streaming from its parent (from file 2)
+  const handleRetryAssistant = async (msg: Message) => {
+    if (streaming || !activeChatId) return;
+    if (!msg.parent_id) {
+      toast.error("Cannot retry — no parent message");
+      return;
+    }
+    const parentUser = allMessages.find((m) => m.id === msg.parent_id);
+    if (!parentUser) {
+      toast.error("Parent message not found");
+      return;
+    }
+    setStreaming(true);
+    setStreamedText("");
+    const history = buildAncestorHistory(allMessages, parentUser).map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    await streamAssistant(activeChatId, history, parentUser.id);
+  };
+
+  const handleRetryFromUser = async (userMsg: Message) => {
+    if (streaming || !activeChatId) return;
+    setStreaming(true);
+    setStreamedText("");
+    const history = buildAncestorHistory(allMessages, userMsg).map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    await streamAssistant(activeChatId, history, userMsg.id);
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -724,7 +799,10 @@ function ChatPage() {
     onSelectChat: handleSelectChat,
     onRenameChat: renameChat,
     onConfigureChat: handleConfigureChat,
-    onDeleteChat: deleteChat,
+    onDeleteChat: (id: string) => {
+      const chat = chats.find((c) => c.id === id);
+      if (chat) setPendingDelete(chat);
+    },
     onLogout: handleLogout,
   };
 
@@ -835,6 +913,12 @@ function ChatPage() {
                     setEditingText("");
                   }}
                   onEditSave={() => handleEditSave(message)}
+                  onRetry={
+                    message.role === "assistant"
+                      ? () => handleRetryAssistant(message)
+                      : undefined
+                  }
+                  onDelete={() => setPendingDeleteMsg(message)}
                   disabled={streaming}
                 />
               );
@@ -882,32 +966,46 @@ function ChatPage() {
               disabled={streaming}
             />
 
-            <Button
-              type="submit"
-              size="icon"
-              className="h-12 w-12 shrink-0"
-              disabled={streaming || !input.trim()}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            {/* Smart send/retry button (from file 2) */}
+            {(() => {
+              const lastMsg = activePath[activePath.length - 1];
+              const isUserLast = lastMsg?.role === "user";
+              const showRetry = !input.trim() && isUserLast;
+              const isDisabled = streaming || (!input.trim() && !isUserLast);
+              return (
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="h-12 w-12 shrink-0"
+                  disabled={isDisabled}
+                  aria-label={showRetry ? "Retry last response" : "Send message"}
+                >
+                  {showRetry ? (
+                    <RotateCcw className="h-4 w-4" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              );
+            })()}
           </div>
         </form>
       </main>
 
-   {user && (
-  <ConfigureChatDialog
-    open={configureOpen}
-    onOpenChange={(open: boolean) => {
-      setConfigureOpen(open);
+      {user && (
+        <ConfigureChatDialog
+          open={configureOpen}
+          onOpenChange={(open: boolean) => {
+            setConfigureOpen(open);
 
-      if (!open) {
-        setConfiguringChat(null);
-      }
-    }}
-    chat={configuringChat}
-    onSave={handleSaveChatConfiguration}
-  />
-)}
+            if (!open) {
+              setConfiguringChat(null);
+            }
+          }}
+          chat={configuringChat}
+          onSave={handleSaveChatConfiguration}
+        />
+      )}
 
       {user && (
         <PersonalizeDialog
@@ -924,6 +1022,49 @@ function ChatPage() {
         />
       )}
 
+      {/* Message delete confirmation dialog (from file 2) */}
+      <AlertDialog
+        open={!!pendingDeleteMsg}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteMsg(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete message and all subsequent replies?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteMessage}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Chat delete confirmation dialog (from file 2) */}
+      <DeleteChatDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+        chatName={pendingDelete?.custom_model_name || pendingDelete?.title}
+        onConfirm={() => {
+          if (pendingDelete) {
+            deleteChat(pendingDelete.id);
+            setPendingDelete(null);
+          }
+        }}
+      />
+
       {user && (
         <ApiKeySetupDialog
           open={!hasKey}
@@ -936,8 +1077,40 @@ function ChatPage() {
   );
 }
 
+// ---------- Helpers ----------
+
 function normalizeChatTitle(value: string): string {
   return value.trim().replace(/\s+/g, " ").slice(0, 80);
+}
+
+function getChatInitials(name: string): string {
+  const trimmed = (name || "").trim();
+  if (!trimmed) return "?";
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+function formatChatTime(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  if (sameDay) {
+    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+  if (diffDays < 7) {
+    return d.toLocaleDateString([], { weekday: "short" });
+  }
+  if (d.getFullYear() === now.getFullYear()) {
+    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+  return d.toLocaleDateString([], { year: "2-digit", month: "short", day: "numeric" });
 }
 
 function groupByParent(messages: Message[]): Record<string, Message[]> {
